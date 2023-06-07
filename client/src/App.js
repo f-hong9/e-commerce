@@ -17,9 +17,14 @@ const App = () => {
   return (
     <Router>
       <Routes>
-        <Route path = "/" element = {<Home />} />
+        <Route exact path = "/" element = {<Home />} />
+
+        {/* List of products with category _____ */}
         <Route path = "/products/:category" element = {<ProductList />} />
+
+         {/* Product with id ____  */}
         <Route path = "/product/:id" element = {<Product />} />
+        
         <Route path = "/cart" element = {<Cart/>} />
         <Route
           path = "/login"
