@@ -8,7 +8,6 @@ import { mobile } from "../responsive";
 import { useLocation} from "react-router-dom";
 import { useState, useEffect } from "react";
 import { publicRequest } from "../requestMethods";
-import axios from "axios"
 import { addProduct } from "../redux/cartRedux";
 import { useDispatch } from "react-redux";
 
@@ -151,7 +150,7 @@ const Product = () => {
 
   const handleClick = () => {
     // update cart
-    dispatch(addProduct({product, quantity}))
+    dispatch(addProduct({ ...product, quantity, color, size})) // redux fxn to pass product info to cart
 
   }
 

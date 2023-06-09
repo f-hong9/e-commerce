@@ -4,6 +4,13 @@ import Announcement from '../components/Announcement'
 import Footer from '../components/Footer'
 import {mobile} from '../responsive'
 import { Add, Remove } from '@material-ui/icons'
+import { useSelector } from 'react-redux'
+import StripeCheckout from "react-stripe-checkout"
+import { useState, useEffect  } from 'react'
+import { userRequest } from '../requestMethods'
+import { useNavigate} from 'react-router-dom'
+
+const KEY = process.env.REACT_APP_STRIPE;
 
 const Container = styled.div``;
 
@@ -145,7 +152,7 @@ const SummaryItemText = styled.span``;
 
 const SummaryItemPrice = styled.span``;
 
-const SummaryButton = styled.button`
+const Button = styled.button`
   width: 100%;
   padding: 10px;
   background-color: black;
@@ -154,6 +161,32 @@ const SummaryButton = styled.button`
 `;
 
 const Cart = () => {
+  const cart = useSelector(state=>state.cart)
+
+  const [stripeToken, setStripeToken] = useState(null)
+  const navigate = useNavigate()
+
+  const onToken = (token) =>{
+    setStripeToken(token)
+  }
+
+  useEffect(() => {
+    const makeRequest = async() => {
+      try {
+        const res = await userRequest.post("/checkout/payment", {
+          tokenId: stripeToken.id,
+          amount: 500,
+
+        }) // requestMethods
+        navigate("/success", {
+          data:res.data,
+          products: cart, })
+      }
+      catch(err) {}
+    }
+    stripeToken && makeRequest();
+  }, [stripeToken, cart.total, navigate])
+
   return (
     <Container>
         <Navbar />
@@ -170,51 +203,34 @@ const Cart = () => {
             </Top>
             <Bottom>
                 <Info>
-                    <Product>
-                        <ProductDetail>
-                            <Image src= "https://internetfusion.imgix.net/1210032.jpg?auto=format,compress&cs=srgb&fit=fill&fill=solid&w=525&h=525" />
-                            <Details>
-                                <ProductName><b>Product:</b>Timberland Boots</ProductName>
-                                <ProductId><b>ID:</b>123123123123</ProductId>
-                                <ProductColor color="black"/>
-                                <ProductSize><b>Size:</b>9.5</ProductSize>
-                            </Details>
-                        </ProductDetail>
-                        <PriceDetail>
-                            <ProductAmountContainer>
-                                <Add />
-                                <ProductAmount>2</ProductAmount>
-                                <Remove />
-                            </ProductAmountContainer>
-                            <ProductPrice>$ 30</ProductPrice>
-                        </PriceDetail>
-                    </Product>
+                    {cart.products.map(product=>(
+                      <Product>
+                          <ProductDetail>
+                              <Image src= {product.img} />
+                              <Details>
+                                  <ProductName><b>Product:</b> {product.title}</ProductName>
+                                  <ProductId><b>ID:</b> {product._id}</ProductId>
+                                  <ProductColor color={product.color}/>
+                                  <ProductSize><b>Size:</b> {product.size}</ProductSize>
+                              </Details>
+                          </ProductDetail>
+                          <PriceDetail>
+                              <ProductAmountContainer>
+                                  <Add />
+                                  <ProductAmount>{product.quantity}</ProductAmount>
+                                  <Remove />
+                              </ProductAmountContainer>
+                              <ProductPrice>$ {product.price * product.quantity}</ProductPrice>
+                          </PriceDetail>
+                      </Product>
+                    ))}
                     <Hr />
-                    <Product>
-                        <ProductDetail>
-                            <Image src="https://images.timberland.com/is/image/timberland/10061024-HERO" />
-                            <Details>
-                                <ProductName><b>Product:</b>Timberland Boots OG</ProductName>
-                                <ProductId><b>ID:</b>123123123123</ProductId>
-                                <ProductColor color="beige"/>
-                                <ProductSize><b>Size:</b>11.5</ProductSize>
-                            </Details>
-                        </ProductDetail>
-                        <PriceDetail>
-                            <ProductAmountContainer>
-                                <Add />
-                                <ProductAmount>2</ProductAmount>
-                                <Remove />
-                            </ProductAmountContainer>
-                            <ProductPrice>$ 30</ProductPrice>
-                        </PriceDetail>
-                    </Product>
                 </Info>
                 <Summary>
                     <SummaryTitle>Order Summary</SummaryTitle>
                     <SummaryItem>
                         <SummaryItemText>Subtotal</SummaryItemText>
-                        <SummaryItemPrice>$ 80</SummaryItemPrice>
+                        <SummaryItemPrice>$ {cart.total}</SummaryItemPrice>
                     </SummaryItem>
                     <SummaryItem>
                         <SummaryItemText>Estimated Shipping</SummaryItemText>
@@ -226,9 +242,20 @@ const Cart = () => {
                     </SummaryItem>
                     <SummaryItem type="total">
                         <SummaryItemText>Total</SummaryItemText>
-                        <SummaryItemPrice>$ 80</SummaryItemPrice>
+                        <SummaryItemPrice>$ {cart.total}</SummaryItemPrice>
                     </SummaryItem>
-                    <SummaryButton>Check Out Now</SummaryButton>
+                    <StripeCheckout
+                      name="FH"
+                      image="https://assets.pokemon.com/assets/cms2/img/pokedex/full/149.png"
+                      billingAddress
+                      shippingAddressdescription={`Your total is $${cart.total}`}
+                      amount={cart.total*100} // Stripe works with cents, thus * 100
+                      token={onToken}
+                      stripeKey={KEY}
+                      >
+
+                      <Button>Check Out Now</Button>
+                    </StripeCheckout>
                 </Summary>
             </Bottom>
         </Wrapper>
